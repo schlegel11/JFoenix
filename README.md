@@ -24,8 +24,10 @@
 * Released builds are available from [Maven Central](http://search.maven.org/#search%7Cga%7C1%7CJFoenix)
 
 # Using JFoenix already?
-Feel free to submit your project info to the following <a href="mailto:developers@jfoenix.com" target="_top">email</a>, to be posted on JFoenix github/website.
+Feel free to submit your project info to the following <a href="mailto:developers@jfoenix.com" target="_top">email</a>, to be posted on JFoenix github.
 * One more thing, all contributions are appreciated. Don't hesitate to add your own contributions to JFoenix :)
+
+If you would like to support JFoenix project, you can become a backer or sponsor on <a href="https://www.patreon.com/shadishaheen">Patreon</a>.
 
 # Projects using JFoenix
 * <a href="http://bcozy.org">BCozy</a>
@@ -46,6 +48,7 @@ Feel free to submit your project info to the following <a href="mailto:developer
 <a href="https://github.com/naeemkhan12/CurrencyConverter.git">Currency Converter</a>,
 <a href="https://github.com/Anikeshpatel/ColorCode-Pro">ColorCode Pro</a>
 * <a href="https://bitbucket.org/NiNi94/oop16-jlearn/src/master/">JLearn</a> A Juicy Learning app
+* <a href="https://github.com/rohan23chhabra/p2p">P2P</a> A peer to peer software.
 
 # Build
 To build JFoenix, execute the following command:
