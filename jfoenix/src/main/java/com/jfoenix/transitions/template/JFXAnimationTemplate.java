@@ -139,6 +139,7 @@ public class JFXAnimationTemplate<N> implements TemplateConfig<N>, TemplateBuild
     return config(builder -> configBuilder);
   }
 
+  //TODO animationObjects sollten Liste haben als value
   public final <B> B build(
       Function<JFXAnimationTemplate<N>, B> builderFunction,
       N animationObject,
