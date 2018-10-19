@@ -21,8 +21,9 @@ package com.jfoenix.controls;
 
 import com.jfoenix.converters.RipplerMaskTypeConverter;
 import com.jfoenix.svg.SVGGlyph;
-import com.jfoenix.transitions.creator.JFXAnimationTemplate;
-import com.jfoenix.transitions.creator.JFXAnimationTemplateAction;
+import com.jfoenix.transitions.template.JFXAnimationTemplate;
+import com.jfoenix.transitions.template.JFXAnimationTemplateAction;
+import com.jfoenix.transitions.template.TemplateBuilder;
 import com.jfoenix.utils.JFXNodeUtils;
 import com.sun.javafx.css.converters.BooleanConverter;
 import com.sun.javafx.css.converters.DurationConverter;
@@ -497,7 +498,7 @@ public class JFXRippler extends StackPane {
         private final class Ripple extends Path {
 
             KeyValue[] outKeyValues;
-            JFXAnimationTemplate.Builder<Node> outAnimationBuilder;
+            TemplateBuilder<Node> outAnimationBuilder;
             Animation outAnimation = null;
 
             Animation inAnimation = null;

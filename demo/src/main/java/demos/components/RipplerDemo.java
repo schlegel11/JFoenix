@@ -5,7 +5,7 @@ import com.jfoenix.controls.JFXSlider;
 import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.svg.SVGGlyph;
 import com.jfoenix.svg.SVGGlyphLoader;
-import com.jfoenix.transitions.creator.*;
+import com.jfoenix.transitions.template.*;
 import com.jfoenix.transitions.JFXAnimationTimer;
 import com.jfoenix.transitions.JFXKeyFrame;
 import com.jfoenix.transitions.JFXKeyValue;
