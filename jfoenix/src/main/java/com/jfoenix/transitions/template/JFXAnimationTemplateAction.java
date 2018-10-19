@@ -45,7 +45,7 @@ public final class JFXAnimationTemplateAction<N, T> {
     targetFunctions = builder.targetFunctions;
     endValueSupplier = builder.endValueFunction;
     interpolatorSupplier = builder.interpolatorFunction;
-    animationObject = builder.animationHelper;
+    animationObject = builder.animationObject;
     animateWhen = builder.animateWhenPredicate.test(animationObject);
     onFinish = builder.onFinish;
   }
@@ -99,7 +99,7 @@ public final class JFXAnimationTemplateAction<N, T> {
     private Function<N, Interpolator> interpolatorFunction = node -> null;
     private Predicate<N> animateWhenPredicate = node -> true;
     private BiConsumer<N, ActionEvent> onFinish = (node, event) -> {};
-    private N animationHelper;
+    private N animationObject;
 
     private Builder(
         InitBuilder<N> initBuilder, Stream<Function<N, WritableValue<T>>> targetFunctions) {
@@ -144,7 +144,7 @@ public final class JFXAnimationTemplateAction<N, T> {
     }
 
     public JFXAnimationTemplateAction<N, T> build(Function<String, ?> buildFunction) {
-      this.animationHelper =
+      this.animationObject =
           initBuilder.animationObjectType.cast(buildFunction.apply(initBuilder.animationObjectId));
       return new JFXAnimationTemplateAction<>(this);
     }
