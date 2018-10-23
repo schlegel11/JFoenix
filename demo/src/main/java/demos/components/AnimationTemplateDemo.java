@@ -2,9 +2,8 @@ package demos.components;
 
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
-import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.template.JFXAnimationTemplate;
-import com.jfoenix.transitions.template.TemplateBuilder;
+import com.jfoenix.transitions.template.JFXTemplateBuilder;
 import javafx.animation.Interpolator;
 import javafx.animation.Timeline;
 import javafx.application.Application;
@@ -12,29 +11,31 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableMap;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
-import javafx.scene.control.Labeled;
-import javafx.scene.layout.*;
-import javafx.scene.paint.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Line;
-import javafx.scene.shape.StrokeLineCap;
-import javafx.scene.shape.StrokeLineJoin;
-import javafx.scene.shape.StrokeType;
-import javafx.scene.text.Font;
+import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import javax.swing.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.function.Consumer;
 
 public class AnimationTemplateDemo extends Application {
 
-  private static final TemplateBuilder<Node> HEART_BEAT =
+  // For CSS see:
+  // https://github.com/daneden/animate.css/blob/master/source/attention_seekers/heartBeat.css
+  private static final JFXTemplateBuilder<Node> HEART_BEAT =
       JFXAnimationTemplate.create()
           .percent(0)
           .action(b -> b.target(Node::scaleXProperty, Node::scaleYProperty).endValue(1))
@@ -48,16 +49,21 @@ public class AnimationTemplateDemo extends Application {
           .action(b -> b.target(Node::scaleXProperty, Node::scaleYProperty).endValue(1))
           .config(b -> b.duration(Duration.seconds(1.3)).interpolator(Interpolator.EASE_BOTH));
 
-  private static final TemplateBuilder<Node> FLASH =
+  // For CSS see:
+  // https://github.com/daneden/animate.css/blob/master/source/attention_seekers/flash.css
+  private static final JFXTemplateBuilder<Node> FLASH =
       JFXAnimationTemplate.create()
           .from()
           .percent(50)
           .action(b -> b.target(Node::opacityProperty).endValue(0))
-          .percent(25, 75)
+          .percent(25)
+          .percent(75)
           .action(b -> b.target(Node::opacityProperty).endValue(1))
           .config(b -> b.duration(Duration.seconds(1.5)).interpolator(Interpolator.EASE_BOTH));
 
-  private static final TemplateBuilder<Node> TADA =
+  // For CSS see:
+  // https://github.com/daneden/animate.css/blob/master/source/attention_seekers/tada.css
+  private static final JFXTemplateBuilder<Node> TADA =
       JFXAnimationTemplate.create()
           .from()
           .action(b -> b.target(Node::scaleXProperty, Node::scaleYProperty).endValue(1))
@@ -75,7 +81,92 @@ public class AnimationTemplateDemo extends Application {
           .action(b -> b.target(Node::rotateProperty).endValue(0))
           .config(b -> b.duration(Duration.seconds(1.3)).interpolator(Interpolator.EASE_BOTH));
 
-  private static final TemplateBuilder<Node> BOUNCE_IN_UP =
+  // For CSS see: https://github.com/daneden/animate.css/blob/master/source/specials/hinge.css
+  private static final JFXTemplateBuilder<Node> HINGE =
+      JFXAnimationTemplate.create()
+          .from()
+          .action(
+              b ->
+                  b.withAnimationObject(Rotate.class, "rotate")
+                      .target(Rotate::angleProperty)
+                      .endValue(0))
+          .percent(20, 60)
+          .action(
+              b ->
+                  b.withAnimationObject(Rotate.class, "rotate")
+                      .target(Rotate::angleProperty)
+                      .endValue(80))
+          .percent(40, 80)
+          .action(
+              b ->
+                  b.withAnimationObject(Rotate.class, "rotate")
+                      .target(Rotate::angleProperty)
+                      .endValue(60))
+          .action(b -> b.target(Node::opacityProperty).endValue(1))
+          .action(b -> b.target(Node::translateYProperty).endValue(0))
+          .to()
+          .action(b -> b.target(Node::opacityProperty).endValue(0))
+          .action(b -> b.target(Node::translateYProperty).endValue(700))
+          // just for resetting the animation.
+          .action(
+              b ->
+                  b.onFinish(
+                      (node, actionEvent) -> {
+                        node.setTranslateY(0);
+                        node.setOpacity(1);
+                      }))
+          // just for resetting the animation.
+          .action(
+              b ->
+                  b.withAnimationObject(Rotate.class, "rotate")
+                      .onFinish((rotate, actionEvent) -> rotate.setAngle(0)))
+          .config(b -> b.duration(Duration.seconds(2)).interpolator(Interpolator.EASE_BOTH));
+
+  // For CSS see:
+  // https://github.com/daneden/animate.css/blob/master/source/attention_seekers/wobble.css
+  private static final JFXTemplateBuilder<Node> WOBBLE =
+      JFXAnimationTemplate.create()
+          .from()
+          .action(b -> b.target(Node::translateXProperty, Node::translateYProperty).endValue(0))
+          .action(b -> b.target(Node::rotateProperty).endValue(0))
+          .percent(15)
+          .action(
+              b ->
+                  b.target(Node::translateXProperty)
+                      .endValue(node -> -0.25 * node.getBoundsInParent().getWidth()))
+          .action(b -> b.target(Node::rotateProperty).endValue(-5))
+          .percent(30)
+          .action(
+              b ->
+                  b.target(Node::translateXProperty)
+                      .endValue(node -> 0.2 * node.getBoundsInParent().getWidth()))
+          .action(b -> b.target(Node::rotateProperty).endValue(3))
+          .percent(45)
+          .action(
+              b ->
+                  b.target(Node::translateXProperty)
+                      .endValue(node -> -0.15 * node.getBoundsInParent().getWidth()))
+          .action(b -> b.target(Node::rotateProperty).endValue(-3))
+          .percent(60)
+          .action(
+              b ->
+                  b.target(Node::translateXProperty)
+                      .endValue(node -> 0.1 * node.getBoundsInParent().getWidth()))
+          .action(b -> b.target(Node::rotateProperty).endValue(2))
+          .percent(75)
+          .action(
+              b ->
+                  b.target(Node::translateXProperty)
+                      .endValue(node -> -0.05 * node.getBoundsInParent().getWidth()))
+          .action(b -> b.target(Node::rotateProperty).endValue(-1))
+          .to()
+          .action(b -> b.target(Node::translateXProperty).endValue(0))
+          .action(b -> b.target(Node::rotateProperty).endValue(0))
+          .config(b -> b.duration(Duration.seconds(1.3)).interpolator(Interpolator.EASE_BOTH));
+
+  // For CSS see:
+  // https://github.com/daneden/animate.css/blob/master/source/bouncing_entrances/bounceInUp.css
+  private static final JFXTemplateBuilder<Node> BOUNCE_IN_UP =
       JFXAnimationTemplate.create()
           .from()
           .action(b -> b.target(Node::opacityProperty).endValue(0))
@@ -83,35 +174,75 @@ public class AnimationTemplateDemo extends Application {
           .percent(60)
           .action(b -> b.target(Node::opacityProperty).endValue(1))
           .action(b -> b.target(Node::translateYProperty).endValue(-20))
-          .percent( 75)
+          .percent(75)
           .action(b -> b.target(Node::translateYProperty).endValue(10))
           .percent(90)
           .action(b -> b.target(Node::translateYProperty).endValue(-5))
           .to()
           .action(b -> b.target(Node::translateYProperty).endValue(0))
-          .config(b -> b.duration(Duration.seconds(1.2)).interpolator(Interpolator.SPLINE(0.215, 0.61, 0.355, 1)));
+          .config(
+              b ->
+                  b.duration(Duration.seconds(1.2))
+                      .interpolator(Interpolator.SPLINE(0.215, 0.61, 0.355, 1)));
 
-  @SafeVarargs
-  private final TemplateBuilder<Node> createColorTransition(
-      ObjectProperty<Paint> paintObjectProperty, ObjectProperty<Paint>... paintObjectProperties) {
+  private static final JFXTemplateBuilder<Node> INTRO_ANIMATION =
+      JFXAnimationTemplate.create()
+          .from()
+          .action(
+              b ->
+                  b.withAnimationObject(Node.class, "firstRow", "secondRow", "thirdRow")
+                      .onFinish((node, actionEvent) -> node.setVisible(false)))
+          .percent(50)
+          .action(
+              b ->
+                  b.withAnimationObject(Node.class, "firstRow")
+                      .onFinish((node, actionEvent) -> BOUNCE_IN_UP.build(node).play()))
+          .percent(51)
+          .action(
+              b ->
+                  b.withAnimationObject(Node.class, "firstRow")
+                      .onFinish((node, actionEvent) -> node.setVisible(true)))
+          .percent(62)
+          .action(
+              b ->
+                  b.withAnimationObject(Node.class, "secondRow")
+                      .onFinish((node, actionEvent) -> BOUNCE_IN_UP.build(node).play()))
+          .percent(63)
+          .action(
+              b ->
+                  b.withAnimationObject(Node.class, "secondRow")
+                      .onFinish((node, actionEvent) -> node.setVisible(true)))
+          .percent(68)
+          .action(
+              b ->
+                  b.withAnimationObject(Node.class, "thirdRow")
+                      .onFinish((node, actionEvent) -> BOUNCE_IN_UP.build(node).play()))
+          .percent(69)
+          .action(
+              b ->
+                  b.withAnimationObject(Node.class, "thirdRow")
+                      .onFinish((node, actionEvent) -> node.setVisible(true)))
+          .config(b -> b.duration(Duration.millis(700)));
+
+  private final ObjectProperty<Paint> colorTransitionProperty =
+      new SimpleObjectProperty<>(Color.TRANSPARENT);
+
+  private JFXTemplateBuilder<Node> createColorTransition() {
     return JFXAnimationTemplate.create()
         .from()
-        .action(b -> b.target(paintObjectProperty, paintObjectProperties).endValue(Color.ORANGERED))
+        .action(b -> b.target(colorTransitionProperty).endValue(Color.ORANGERED))
         .percent(16)
-        .action(b -> b.target(paintObjectProperty, paintObjectProperties).endValue(Color.LAWNGREEN))
+        .action(b -> b.target(colorTransitionProperty).endValue(Color.LAWNGREEN))
         .percent(32)
-        .action(
-            b -> b.target(paintObjectProperty, paintObjectProperties).endValue(Color.DODGERBLUE))
+        .action(b -> b.target(colorTransitionProperty).endValue(Color.DODGERBLUE))
         .percent(48)
-        .action(
-            b -> b.target(paintObjectProperty, paintObjectProperties).endValue(Color.YELLOWGREEN))
+        .action(b -> b.target(colorTransitionProperty).endValue(Color.YELLOWGREEN))
         .percent(64)
-        .action(
-            b -> b.target(paintObjectProperty, paintObjectProperties).endValue(Color.SPRINGGREEN))
+        .action(b -> b.target(colorTransitionProperty).endValue(Color.SPRINGGREEN))
         .percent(80)
-        .action(b -> b.target(paintObjectProperty, paintObjectProperties).endValue(Color.DEEPPINK))
+        .action(b -> b.target(colorTransitionProperty).endValue(Color.DEEPPINK))
         .to()
-        .action(b -> b.target(paintObjectProperty, paintObjectProperties).endValue(Color.ORANGERED))
+        .action(b -> b.target(colorTransitionProperty).endValue(Color.ORANGERED))
         .config(
             b ->
                 b.duration(Duration.minutes(2.5))
@@ -127,38 +258,90 @@ public class AnimationTemplateDemo extends Application {
         (int) (color.getBlue() * 255));
   }
 
-  @Override
-  public void start(Stage primaryStage) {
+  private Group createHeader() {
 
-    VBox vBox = new VBox();
-    vBox.setStyle("-fx-background-color:WHITE");
-    HBox hBox = new HBox();
-    hBox.setStyle("-fx-background-color:WHITE");
+    StringBinding brighterColorStringBinding =
+        Bindings.createStringBinding(
+            () -> toRGBCode(((Color) colorTransitionProperty.get())), colorTransitionProperty);
+    StringBinding darkerColorStringBinding =
+        Bindings.createStringBinding(
+            () -> toRGBCode(((Color) colorTransitionProperty.get()).darker()),
+            colorTransitionProperty);
 
     Label label = new Label("JFXAnimation.template");
-    Font font = new Font(50);
-    label.setFont(font);
+    label
+        .styleProperty()
+        .bind(
+            Bindings.format(
+                "-fx-text-fill: linear-gradient(to bottom, %s, %s); -fx-font-size: 50",
+                brighterColorStringBinding, darkerColorStringBinding));
+    return new Group(label);
+  }
 
-    Map<String, Timeline> animations = new HashMap<>();
-    animations.put("Flash", FLASH.build(label));
-    animations.put("Heart Beat", HEART_BEAT.build(label));
-    animations.put("Tada", TADA.build(label));
-    animations.put("BounceIn Up", BOUNCE_IN_UP.build(label));
+  private Group createBody(ObservableMap<String, Timeline> animations) {
+
+    JFXComboBox<String> comboBox =
+        createBodyComboBox(animationName -> animations.get(animationName).play());
+    comboBox.getItems().addAll(animations.keySet());
+    animations.addListener(
+        (MapChangeListener<? super String, ? super Timeline>)
+            change -> {
+              if (change.wasAdded()) {
+                comboBox.getItems().add(change.getKey());
+              }
+            });
+    comboBox.getSelectionModel().selectFirst();
+
+    JFXButton button =
+        createBodyButton(
+            () -> animations.get(comboBox.getSelectionModel().getSelectedItem()).play());
+
+    HBox hBox = new HBox(comboBox, button);
+    hBox.setAlignment(Pos.BOTTOM_CENTER);
+    hBox.setSpacing(23);
+    return new Group(hBox);
+  }
+
+  private JFXComboBox<String> createBodyComboBox(Consumer<String> selectionChangedConsumer) {
 
     JFXComboBox<String> comboBox = new JFXComboBox<>();
     comboBox.setPrefWidth(170);
-    comboBox.getItems().addAll(animations.keySet());
-    comboBox.getSelectionModel().selectFirst();
     comboBox
         .getSelectionModel()
         .selectedItemProperty()
-        .addListener((observable, oldValue, newValue) -> animations.get(newValue).play());
+        .addListener((observable, oldValue, newValue) -> selectionChangedConsumer.accept(newValue));
+    comboBox.focusColorProperty().bind(colorTransitionProperty);
+    comboBox.unFocusColorProperty().bind(colorTransitionProperty);
+    return comboBox;
+  }
+
+  private JFXButton createBodyButton(Runnable buttonClickedRunnable) {
+
+    StringBinding darkerColorStringBinding =
+        Bindings.createStringBinding(
+            () -> toRGBCode(((Color) colorTransitionProperty.get()).darker()),
+            colorTransitionProperty);
 
     JFXButton button = new JFXButton("Animate it");
     button.setPrefWidth(120);
     button.setDisableVisualFocus(true);
-    button.setOnMouseClicked(
-        event -> animations.get(comboBox.getSelectionModel().getSelectedItem()).play());
+    button.setOnMouseClicked(event -> buttonClickedRunnable.run());
+    button
+        .styleProperty()
+        .bind(
+            Bindings.format(
+                "-fx-border-color: %s; \n"
+                    + "-fx-background-color: transparent; \n"
+                    + "-fx-text-fill: %s; \n"
+                    + "-fx-border-width: 2; \n"
+                    + "-fx-border-radius: 5;\n"
+                    + "-fx-font-size: 16",
+                darkerColorStringBinding, darkerColorStringBinding));
+    button.ripplerFillProperty().bind(colorTransitionProperty);
+    return button;
+  }
+
+  private Group createFooter() {
 
     Line line = new Line(0, 0, 450, 0);
     line.setStyle(
@@ -171,52 +354,40 @@ public class AnimationTemplateDemo extends Application {
     subLabel2.setStyle("-fx-font-size: 13; -fx-text-fill: #a5a5a5;");
     VBox.setMargin(subLabel2, new Insets(-30, 0, 0, 0));
 
-    ObjectProperty<Paint> paintProperty = new SimpleObjectProperty<>(Color.TRANSPARENT);
+    VBox footerVBox = new VBox(40, line, subLabel, subLabel2);
+    footerVBox.setAlignment(Pos.CENTER);
+    return new Group(footerVBox);
+  }
 
-    createColorTransition(
-            button.ripplerFillProperty(),
-            label.textFillProperty(),
-            comboBox.focusColorProperty(),
-            comboBox.unFocusColorProperty(),
-            paintProperty)
-        .build(null)
-        .play();
+  @Override
+  public void start(Stage primaryStage) {
 
-    StringBinding colorStringBinding =
-        Bindings.createStringBinding(() -> toRGBCode(((Color) paintProperty.get())), paintProperty);
-    StringBinding darkerColorStringBinding =
-        Bindings.createStringBinding(
-            () -> toRGBCode(((Color) paintProperty.get()).darker()), paintProperty);
+    VBox vBox = new VBox();
+    vBox.setStyle("-fx-background-color:WHITE");
 
-    label
-        .styleProperty()
-        .bind(
-            Bindings.format(
-                "-fx-text-fill: linear-gradient(to bottom, %s, %s);",
-                colorStringBinding, darkerColorStringBinding));
+    Group header = createHeader();
+    header.setVisible(false);
 
-    button
-        .styleProperty()
-        .bind(
-            Bindings.format(
-                "-fx-border-color: %s; \n"
-                    + "-fx-background-color: transparent; \n"
-                    + "-fx-text-fill: %s; \n"
-                    + "-fx-border-width: 2; \n"
-                    + "-fx-border-radius: 5;\n"
-                    + "-fx-font-size: 16",
-                darkerColorStringBinding, darkerColorStringBinding));
+    ObservableMap<String, Timeline> animations = FXCollections.observableHashMap();
+    animations.put("Flash", FLASH.build(header));
+    animations.put("Heart Beat", HEART_BEAT.build(header));
+    animations.put("Tada", TADA.build(header));
+    animations.put("BounceIn Up", BOUNCE_IN_UP.build(header));
+    animations.put("Wobble", WOBBLE.build(header));
 
-    hBox.setAlignment(Pos.BOTTOM_CENTER);
-    hBox.setSpacing(23);
-    hBox.getChildren().addAll(comboBox, button);
+    Rotate rotate = new Rotate(0, 0, 0);
+    header.getTransforms().add(rotate);
+    animations.put(
+        "Hinge", HINGE.build(b -> b.defaultObject(header).namedObject("rotate", rotate)));
+    Group body = createBody(animations);
+    body.setVisible(false);
+
+    Group footer = createFooter();
+    footer.setVisible(false);
+
     vBox.setAlignment(Pos.CENTER);
     vBox.setSpacing(40);
-    vBox.getChildren().addAll(label, hBox, line, subLabel, subLabel2);
-
-    Map<String, Node> t = new HashMap<>();
-    t.put("", line);
-    BOUNCE_IN_UP.build(label, t).play();
+    vBox.getChildren().addAll(header, body, footer);
 
     final Scene scene = new Scene(vBox, 1100, 600);
     scene
@@ -225,6 +396,17 @@ public class AnimationTemplateDemo extends Application {
     primaryStage.setTitle("JFX Animation Template Demo");
     primaryStage.setScene(scene);
     primaryStage.show();
+
+    Timeline introAnimation =
+        INTRO_ANIMATION.build(
+            b ->
+                b.namedObject("firstRow", header)
+                    .namedObject("secondRow", body)
+                    .namedObject("thirdRow", footer));
+    animations.put("Intro Animation", introAnimation);
+
+    createColorTransition().build().play();
+    introAnimation.play();
   }
 
   public static void main(String[] args) {
