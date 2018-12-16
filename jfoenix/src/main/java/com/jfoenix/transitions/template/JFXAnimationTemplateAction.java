@@ -23,11 +23,8 @@ import javafx.beans.value.WritableValue;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
 
-import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Predicate;
+import java.util.Optional;
+import java.util.function.*;
 import java.util.stream.Stream;
 
 /**
@@ -37,7 +34,7 @@ import java.util.stream.Stream;
  */
 public final class JFXAnimationTemplateAction<N, T> {
 
-  private final Collection<Function<N, WritableValue<T>>> targetFunctions;
+  private final Stream<Function<N, WritableValue<T>>> targetFunctions;
   private final Function<N, T> endValueSupplier;
   private final Function<N, Interpolator> interpolatorSupplier;
   private final boolean animateWhen;
@@ -48,30 +45,26 @@ public final class JFXAnimationTemplateAction<N, T> {
     targetFunctions = builder.targetFunctions;
     endValueSupplier = builder.endValueFunction;
     interpolatorSupplier = builder.interpolatorFunction;
-    animationObject = builder.animationObject;
+    animationObject = builder.animationHelper;
     animateWhen = builder.animateWhenPredicate.test(animationObject);
     onFinish = builder.onFinish;
   }
 
   public static <N> InitBuilder<N> builder(Class<N> animationObjectType) {
     return new InitBuilder<>(
-        animationObjectType,
-        JFXTemplateBuilder.JFXAnimationObjectMapBuilder.DEFAULT_ANIMATION_OBJECT_NAME);
+        animationObjectType, JFXAnimationTemplate.DEFAULT_ANIMATION_OBJECT_KEY);
   }
 
   public static InitBuilder<Node> builder() {
     return builder(Node.class);
   }
 
-  public Collection<Function<N, WritableValue<T>>> getTargetFunctions() {
+  public Stream<Function<N, WritableValue<T>>> getTargetFunctions() {
     return targetFunctions;
   }
 
   public Optional<WritableValue<T>> getFirstTarget() {
-    return getTargetFunctions()
-        .stream()
-        .findFirst()
-        .map(function -> function.apply(animationObject));
+    return getTargetFunctions().findFirst().map(function -> function.apply(animationObject));
   }
 
   public T getEndValue() {
@@ -92,7 +85,6 @@ public final class JFXAnimationTemplateAction<N, T> {
   public <M> Stream<M> mapTo(Function<WritableValue<Object>, M> mappingFunction) {
     return animateWhen
         ? getTargetFunctions()
-            .stream()
             .map(
                 function ->
                     mappingFunction.apply((WritableValue<Object>) function.apply(animationObject)))
@@ -101,22 +93,18 @@ public final class JFXAnimationTemplateAction<N, T> {
 
   public static final class Builder<N, T> {
 
-    private final Collection<Function<N, WritableValue<T>>> targetFunctions;
+    private final Stream<Function<N, WritableValue<T>>> targetFunctions;
     private final InitBuilder<N> initBuilder;
     private Function<N, T> endValueFunction = node -> null;
     private Function<N, Interpolator> interpolatorFunction = node -> null;
     private Predicate<N> animateWhenPredicate = node -> true;
     private BiConsumer<N, ActionEvent> onFinish = (node, event) -> {};
-    private N animationObject;
+    private N animationHelper;
 
     private Builder(
-        InitBuilder<N> initBuilder, Collection<Function<N, WritableValue<T>>> targetFunctions) {
+        InitBuilder<N> initBuilder, Stream<Function<N, WritableValue<T>>> targetFunctions) {
       this.initBuilder = initBuilder;
       this.targetFunctions = targetFunctions;
-    }
-
-    private Builder(InitBuilder<N> initBuilder) {
-      this(initBuilder, Collections.emptyList());
     }
 
     public Builder<N, T> endValue(T endValue) {
@@ -155,24 +143,10 @@ public final class JFXAnimationTemplateAction<N, T> {
       return this;
     }
 
-    public JFXAnimationTemplateAction<N, T> build(
-        Function<Collection<String>, Object> buildFunction) {
-      this.animationObject =
-          initBuilder.animationObjectType.cast(
-              buildFunction.apply(initBuilder.animationObjectNames));
+    public JFXAnimationTemplateAction<N, T> build(Function<String, ?> buildFunction) {
+      this.animationHelper =
+          initBuilder.animationObjectType.cast(buildFunction.apply(initBuilder.animationObjectId));
       return new JFXAnimationTemplateAction<>(this);
-    }
-
-    public Stream<JFXAnimationTemplateAction<N, T>> buildActions(
-        Function<Collection<String>, Collection<Object>> buildFunction) {
-      return buildFunction
-          .apply(initBuilder.animationObjectNames)
-          .stream()
-          .map(
-              animationObject -> {
-                this.animationObject = initBuilder.animationObjectType.cast(animationObject);
-                return new JFXAnimationTemplateAction<>(this);
-              });
     }
 
     public JFXAnimationTemplateAction<N, T> build() {
@@ -183,15 +157,14 @@ public final class JFXAnimationTemplateAction<N, T> {
   public static final class InitBuilder<N> {
 
     private final Class<N> animationObjectType;
-    private final Collection<String> animationObjectNames = new ArrayList<>();
+    private final String animationObjectId;
 
-    private InitBuilder(
-        Class<N> animationObjectType, String animationObjectId, String... animationObjectNames) {
+    private InitBuilder(Class<N> animationObjectType, String animationObjectId) {
       this.animationObjectType = animationObjectType;
-      this.animationObjectNames.add(animationObjectId);
-      this.animationObjectNames.addAll(Arrays.asList(animationObjectNames));
+      this.animationObjectId = animationObjectId;
     }
 
+    // Instance method wraps the value create target method for convenience.
     @SafeVarargs
     public final <T> Builder<N, T> target(WritableValue<T> target, WritableValue<T>... targets) {
       Function<N, WritableValue<T>>[] targetFunctions =
@@ -201,35 +174,33 @@ public final class JFXAnimationTemplateAction<N, T> {
       return target(node -> target, targetFunctions);
     }
 
+    // Instance method wraps the value create target method for convenience.
     @SafeVarargs
     public final <T> Builder<N, T> target(
         Function<N, WritableValue<T>> targetFunction,
         Function<N, WritableValue<T>>... targetFunctions) {
-      Collection<Function<N, WritableValue<T>>> functions = new ArrayList<>();
-      functions.add(targetFunction);
-      functions.addAll(Arrays.asList(targetFunctions));
-      return new Builder<>(this, functions);
+      return new Builder<>(
+          this, Stream.concat(Stream.of(targetFunction), Stream.of(targetFunctions)));
     }
 
     public final Builder<N, ?> animateWhen(boolean animateWhen) {
-      return new Builder<>(this).animateWhen(animateWhen);
+      return new Builder<>(this, Stream.empty()).animateWhen(animateWhen);
     }
 
     public final Builder<N, ?> animateWhen(Predicate<N> animateWhenPredicate) {
-      return new Builder<>(this).animateWhen(animateWhenPredicate);
+      return new Builder<>(this, Stream.empty()).animateWhen(animateWhenPredicate);
     }
 
     public Builder<N, ?> ignoreAnimation() {
-      return new Builder<>(this).ignoreAnimation();
+      return new Builder<>(this, Stream.empty()).ignoreAnimation();
     }
 
     public Builder<N, ?> onFinish(BiConsumer<N, ActionEvent> onFinish) {
-      return new Builder<>(this).onFinish(onFinish);
+      return new Builder<>(this, Stream.empty()).onFinish(onFinish);
     }
 
-    public <T> InitBuilder<T> withAnimationObject(
-        Class<T> clazz, String animationObjectName, String... animationObjectNames) {
-      return new InitBuilder<>(clazz, animationObjectName, animationObjectNames);
+    public <T> InitBuilder<T> withAnimationObject(Class<T> clazz, String classKey) {
+      return new InitBuilder<>(clazz, classKey);
     }
   }
 }
