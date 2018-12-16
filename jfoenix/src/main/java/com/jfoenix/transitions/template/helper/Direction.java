@@ -16,34 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-package com.jfoenix.controls.cells.editors;
-
-import com.jfoenix.utils.JFXUtilities;
-import com.jfoenix.validation.IntegerValidator;
-import com.jfoenix.validation.base.ValidatorBase;
+package com.jfoenix.transitions.template.helper;
 
 /**
- * <h1>Text field cell editor (numbers only) </h1>
- * this an example of the cell editor, it creates a JFXTextField node to
- * allow the user to edit the cell value
- * <p>
+ * Enum is used for any context related to directions.
  *
- * @author Shadi Shaheen
+ * @author Marcel Schlegel (schlegel11)
  * @version 1.0
- * @since 2016-03-09
+ * @since 2018-12-13
  */
-public class IntegerTextFieldEditorBuilder extends TextFieldEditorBase<Integer> {
-
-    public IntegerTextFieldEditorBuilder(ValidatorBase... validators) {
-        super(JFXUtilities.concat(
-            new ValidatorBase[] {new IntegerValidator()},
-            validators,
-            len -> new ValidatorBase[len]));
-    }
-
-    @Override
-    public Integer getValue() {
-        return Integer.valueOf(textField.getText());
-    }
+public enum Direction {
+  FORWARDS,
+  BACKWARDS
 }
